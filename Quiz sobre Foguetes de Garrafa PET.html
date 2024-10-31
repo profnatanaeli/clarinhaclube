@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<!-- saved from url=(0063)file:///C:/Users/User/Documents/CLUBE%20DO%20FOGUETE/INDEX.html -->
+<html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz sobre Foguetes de Garrafa PET</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #bd458f;
+            color: rgb(104, 202, 206);
+            text-align: center;
+            overflow: hidden;
+        }
+
+        #quiz-container {
+            margin: 20px auto;
+            padding: 20px;
+            border: 2px solid #a34e4e;
+            width: 300px;
+            border-radius: 10px;
+            background-color: rgba(172, 68, 68, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        button {
+            color: rgb(87, 67, 133);
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        #easy-button {
+            background-color: #2e9dc2; /* Azul bebê */
+        }
+
+        #medium-button {
+            background-color: #ff91ff; /* Roxo */
+        }
+
+        #hard-button {
+            background-color: #1a0129; /* Branco */
+            color: black; /* Texto preto para contraste */
+        }
+
+        button:hover {
+            opacity: 0.8; /* Efeito de hover */
+        }
+
+        #ranking {
+            margin-top: 20px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            color: rgb(231, 148, 227);
+            font-size: 24px;
+        }
+
+        .overlay.green {
+            background-color: rgba(0, 255, 0, 0.7);
+        }
+
+        .overlay.red {
+            background-color: rgba(255, 0, 0, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <h1>Quiz do Foguete de Garrafa PET</h1>
+    
+    <div id="difficulty-container">
+        <button id="easy-button">Fácil</button>
+        <button id="medium-button">Médio</button>
+        <button id="hard-button">Difícil</button>
+    </div>
+
+    <div id="quiz-container" style="display: block;">
+        <div id="question">Qual a principal força que um foguete deve vencer para decolar?</div>
+        <div id="options"><button>Gravidade</button><button>Arrasto</button><button>Inércia</button><button>Pressão</button></div>
+        <button id="hint-button" style="display: block;">Dica</button>
+        <button id="next-button" style="display: block;">Próxima Pergunta</button>
+    </div>
+
+    <div id="ranking">
+        <h2>Ranking Good ranking bad</h2>
+        <ul id="ranking-list"></ul>
+    </div>
+
+    <div id="correct-overlay" class="overlay green" style="display: none;">
+        <div>✅ Correto! Parabéns! 🎉</div>
+    </div>
+    <div id="incorrect-overlay" class="overlay red" style="display: none;">
+        <div>❌ Tente de novo, você apenas errou!</div>
+    </div>
+
+    <script>
+        const questions = {
+            easy: [
+                {
+                    question: "Qual material é usado para fazer a maioria dos foguetes de garrafa PET?",
+                    options: ["Vidro", "Plástico", "Metal", "Cerâmica"],
+                    answer: "Plástico",
+                    hint: "É leve e flexível."
+                },
+                {
+                    question: "Qual a principal força que um foguete deve vencer para decolar?",
+                    options: ["Gravidade", "Arrasto", "Inércia", "Pressão"],
+                    answer: "Gravidade",
+                    hint: "É a força que puxa tudo para baixo."
+                },
+                {
+                    question: "Qual o principal líquido usado em foguetes de garrafa PET?",
+                    options: ["Óleo", "Água", "Álcool", "Ácido"],
+                    answer: "Água",
+                    hint: "É essencial para gerar empuxo."
+                },
+                // Adicione mais perguntas até completar 33
+            ],
+            medium: [
+                {
+                    question: "Qual a técnica mais comum para aumentar o empuxo em foguetes de garrafa PET?",
+                    options: ["Adicionar mais água", "Diminuir a massa", "Usar um foguete maior", "Aumentar a pressão"],
+                    answer: "Adicionar mais água",
+                    hint: "Mais água geralmente significa mais empuxo."
+                },
+                {
+                    question: "Qual a importância do bico do foguete?",
+                    options: ["Aumentar o peso", "Direcionar o fluxo de ar", "Melhorar a estética", "Nada disso"],
+                    answer: "Direcionar o fluxo de ar",
+                    hint: "Ajuda a controlar a direção do foguete."
+                },
+                // Adicione mais perguntas até completar 33
+            ],
+            hard: [
+                {
+                    question: "Qual é a fórmula para calcular a energia cinética de um foguete?",
+                    options: ["E = m * v^2", "E = 1/2 * m * v^2", "E = m * g * h", "E = F * d"],
+                    answer: "E = 1/2 * m * v^2",
+                    hint: "É metade da massa vezes a velocidade ao quadrado."
+                },
+                {
+                    question: "Qual é o ângulo ideal para lançar um foguete de garrafa PET?",
+                    options: ["0 graus", "45 graus", "90 graus", "30 graus"],
+                    answer: "45 graus",
+                    hint: "É o ângulo que proporciona a maior distância."
+                },
+                // Adicione mais perguntas até completar 34
+            ]
+        };
+
+        let currentQuestionIndex = 0;
+        let currentDifficulty = 'easy';
+        let score = 0;
+        let errors = 0;
+        const ranking = [];
+
+        function loadQuestion() {
+            const question = questions[currentDifficulty][currentQuestionIndex];
+            document.getElementById("question").textContent = question.question;
+            const optionsDiv = document.getElementById("options");
+            optionsDiv.innerHTML = "";
+            question.options.forEach(option => {
+                const button = document.createElement("button");
+                button.textContent = option;
+                button.onclick = () => selectOption(option);
+                optionsDiv.appendChild(button);
+            });
+            document.getElementById("hint-button").style.display = "block";
+            document.getElementById("next-button").style.display = "none";
+        }
+
+        function selectOption(option) {
+            const question = questions[currentDifficulty][currentQuestionIndex];
+            if (option === question.answer) {
+                score++;
+                showCorrectOverlay();
+            } else {
+                errors++;
+                showIncorrectOverlay();
+            }
+            document.getElementById("next-button").style.display = "block";
+        }
+
+        function showCorrectOverlay() {
+            const overlay = document.getElementById("correct-overlay");
+            overlay.style.display = "flex";
+            setTimeout(() => {
+                overlay.style.display = "none";
+            }, 2000);
+        }
+
+        function showIncorrectOverlay() {
+            const overlay = document.getElementById("incorrect-overlay");
+            overlay.style.display = "flex";
+            setTimeout(() => {
+                overlay.style.display = "none";
+            }, 2000);
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions[currentDifficulty].length) {
+                loadQuestion();
+            } else {
+                endQuiz();
+            }
+        }
+
+        function endQuiz() {
+            alert("Fim do Quiz! Sua pontuação: " + score + "/" + questions[currentDifficulty].length);
+            const name = prompt("Digite seu nome para o ranking:");
+            ranking.push({ name, score, errors });
+            ranking.sort((a, b) => b.score - a.score);
+            updateRanking();
+            resetQuiz();
+        }
+
+        function updateRanking() {
+            const rankingList = document.getElementById("ranking-list");
+            rankingList.innerHTML = "";
+            ranking.forEach(entry => {
+                const li = document.createElement("li");
+                li.textContent = `${entry.name}: ${entry.score} acertos, ${entry.errors} erros`;
+                rankingList.appendChild(li);
+            });
+        }
+
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            errors = 0;
+            document.getElementById("quiz-container").style.display = "block";
+            loadQuestion();
+        }
+
+        document.getElementById("next-button").onclick = nextQuestion;
+
+        document.getElementById("easy-button").onclick = () => {
+            currentDifficulty = 'easy';
+            resetQuiz();
+        };
+        document.getElementById("medium-button").onclick = () => {
+            currentDifficulty = 'medium';
+            resetQuiz();
+        };
+        document.getElementById("hard-button").onclick = () => {
+            currentDifficulty = 'hard';
+            resetQuiz();
+        };
+
+        document.getElementById("hint-button").onclick = () => {
+            const question = questions[currentDifficulty][currentQuestionIndex];
+            alert("Dica: " + question.hint);
+        };
+
+        // Mostrar a primeira pergunta
+        loadQuestion();
+    </script>
+
+
+
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz sobre Foguetes de Garrafa PET</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #633175;
+            color: rgb(18, 11, 56);
+            text-align: center;
+            overflow: hidden;
+        }
+
+        #quiz-container {
+            margin: 20px auto;
+            padding: 20px;
+            border: 2px solid #b047c5;
+            width: 300px;
+            border-radius: 10px;
+            background-color: rgb(92, 94, 219);
+            position: relative;
+            z-index: 1;
+        }
+
+        button {
+            color: rgb(131, 39, 134);
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        #easy-button {
+            background-color: #6e58ec; /* Azul bebê */
+        }
+
+        #medium-button {
+            background-color: #d141d1; /* Roxo */
+        }
+
+        #hard-button {
+            background-color: #ffc5fa; /* Branco */
+            color: rgb(78, 50, 145); /* Texto preto para contraste */
+        }
+
+        button:hover {
+            opacity: 0.8; /* Efeito de hover */
+        }
+
+        #ranking {
+            margin-top: 20px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            color: rgb(52, 91, 197);
+            font-size: 24px;
+        }
+
+        .overlay.green {
+            background-color: rgba(0, 255, 0, 0.7);
+        }
+
+        .overlay.red {
+            background-color: rgba(255, 0, 0, 0.7);
+        }
+    </style>
+
+
+    <h1>Quiz do Foguete de Garrafa PET</h1>
+    
+    <div id="difficulty-container">
+        <button id="easy-button">Fácil</button>
+        <button id="medium-button">Médio</button>
+        <button id="hard-button">Difícil</button>
+    </div>
+
+    <div id="quiz-container">
+        <div id="question"></div>
+        <div id="options"></div>
+        <button id="hint-button" style="display: none;">Dica</button>
+        <button id="next-button" style="display: none;">Próxima Pergunta</button>
+    </div>
+
+    <div id="ranking">
+        <h2>Ranking</h2>
+        <ul id="ranking-list"></ul>
+    </div>
+
+    <div id="correct-overlay" class="overlay green">
+        <div>✅ Correto! Parabéns! 🎉</div>
+    </div>
+    <div id="incorrect-overlay" class="overlay red">
+        <div>❌ Tente de novo, você apenas errou!</div>
+    </div>
+
+    <script>
+        const questions = {
+            easy: [
+                {
+                    question: "Qual material é usado para fazer a maioria dos foguetes de garrafa PET?",
+                    options: ["Vidro", "Plástico", "Metal", "Cerâmica"],
+                    answer: "Plástico",
+                    hint: "É leve e flexível."
+                },
+                {
+                    question: "Qual a principal força que um foguete deve vencer para decolar?",
+                    options: ["Gravidade", "Arrasto", "Inércia", "Pressão"],
+                    answer: "Gravidade",
+                    hint: "É a força que puxa tudo para baixo."
+                },
+                {
+                    question: "Qual o principal líquido usado em foguetes de garrafa PET?",
+                    options: ["Óleo", "Água", "Álcool", "Ácido"],
+                    answer: "Água",
+                    hint: "É essencial para gerar empuxo."
+                },
+                // Adicione mais perguntas até completar 33
+            ],
+            medium: [
+                {
+                    question: "Qual a técnica mais comum para aumentar o empuxo em foguetes de garrafa PET?",
+                    options: ["Adicionar mais água", "Diminuir a massa", "Usar um foguete maior", "Aumentar a pressão"],
+                    answer: "Adicionar mais água",
+                    hint: "Mais água geralmente significa mais empuxo."
+                },
+                {
+                    question: "Qual a importância do bico do foguete?",
+                    options: ["Aumentar o peso", "Direcionar o fluxo de ar", "Melhorar a estética", "Nada disso"],
+                    answer: "Direcionar o fluxo de ar",
+                    hint: "Ajuda a controlar a direção do foguete."
+                },
+                // Adicione mais perguntas até completar 33
+            ],
+            hard: [
+                {
+                    question: "Qual é a fórmula para calcular a energia cinética de um foguete?",
+                    options: ["E = m * v^2", "E = 1/2 * m * v^2", "E = m * g * h", "E = F * d"],
+                    answer: "E = 1/2 * m * v^2",
+                    hint: "É metade da massa vezes a velocidade ao quadrado."
+                },
+                {
+                    question: "Qual é o ângulo ideal para lançar um foguete de garrafa PET?",
+                    options: ["0 graus", "45 graus", "90 graus", "30 graus"],
+                    answer: "45 graus",
+                    hint: "É o ângulo que proporciona a maior distância."
+                },
+                // Adicione mais perguntas até completar 34
+            ]
+        };
+
+        let currentQuestionIndex = 0;
+        let currentDifficulty = 'easy';
+        let score = 0;
+        let errors = 0;
+        const ranking = [];
+
+        function loadQuestion() {
+            const question = questions[currentDifficulty][currentQuestionIndex];
+            document.getElementById("question").textContent = question.question;
+            const optionsDiv = document.getElementById("options");
+            optionsDiv.innerHTML = "";
+            question.options.forEach(option => {
+                const button = document.createElement("button");
+                button.textContent = option;
+                button.onclick = () => selectOption(option);
+                optionsDiv.appendChild(button);
+            });
+            document.getElementById("hint-button").style.display = "block";
+            document.getElementById("next-button").style.display = "none";
+        }
+
+        function selectOption(option) {
+            const question = questions[currentDifficulty][currentQuestionIndex];
+            if (option === question.answer) {
+                score++;
+                showCorrectOverlay();
+            } else {
+                errors++;
+                showIncorrectOverlay();
+            }
+            document.getElementById("next-button").style.display = "block";
+        }
+
+        function showCorrectOverlay() {
+            const overlay = document.getElementById("correct-overlay");
+            overlay.style.display = "flex";
+            setTimeout(() => {
+                overlay.style.display = "none";
+            }, 2000);
+        }
+
+        function showIncorrectOverlay() {
+            const overlay = document.getElementById("incorrect-overlay");
+            overlay.style.display = "flex";
+            setTimeout(() => {
+                overlay.style.display = "none";
+            }, 2000);
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions[currentDifficulty].length) {
+                loadQuestion();
+            } else {
+                endQuiz();
+            }
+        }
+
+        function endQuiz() {
+            alert("Fim do Quiz! Sua pontuação: " + score + "/" + questions[currentDifficulty].length);
+            const name = prompt("Digite seu nome para o ranking:");
+            ranking.push({ name, score, errors });
+            ranking.sort((a, b) => b.score - a.score);
+            updateRanking();
+            resetQuiz();
+        }
+
+        function updateRanking() {
+            const rankingList = document.getElementById("ranking-list");
+            rankingList.innerHTML = "";
+            ranking.forEach(entry => {
+                const li = document.createElement("li");
+                li.textContent = `${entry.name}: ${entry.score} acertos, ${entry.errors} erros`;
+                rankingList.appendChild(li);
+            });
+        }
+
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            errors = 0;
+            document.getElementById("quiz-container").style.display = "block";
+            loadQuestion();
+        }
+
+        document.getElementById("next-button").onclick = nextQuestion;
+
+        document.getElementById("easy-button").onclick = () => {
+            currentDifficulty = 'easy';
+            resetQuiz();
+        };
+        document.getElementById("medium-button").onclick = () => {
+            currentDifficulty = 'medium';
+            resetQuiz();
+        };
+        document.getElementById("hard-button").onclick = () => {
+            currentDifficulty = 'hard';
+            resetQuiz();
+        };
+
+        document.getElementById("hint-button").onclick = () => {
+            const question = questions[currentDifficulty][currentQuestionIndex];
+            alert("Dica: " + question.hint);
+        };
+
+        // Mostrar a primeira pergunta
+        loadQuestion();
+    </script>
+
+
+
+
+
+
+</body></html>
